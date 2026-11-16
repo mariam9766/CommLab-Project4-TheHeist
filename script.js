@@ -15,5 +15,6 @@ video.addEventListener("timeupdate", function () {
 // any character just hides the menu and the video keeps going
 function keepPlaying() {
   menu.style.display = "none";
+    alreadyChose = true;
   video.play();
 }
