@@ -8,7 +8,7 @@ let alreadyChose = false;
 video.addEventListener("timeupdate", function () {
   if (video.currentTime >= PAUSE_TIME && !alreadyChose) {
     video.pause();
-    menu.style.display = "show";
+    menu.style.display = "block";
   }
 });
 
