@@ -1,4 +1,4 @@
-const video = document.getElementById("flim");
+const video = document.getElementById("film");
 const menu = document.getElementById("menu");
 
 const PAUSE_TIME = 75; // second where the video stops so you can choose
