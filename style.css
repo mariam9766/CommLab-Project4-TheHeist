@@ -1,3 +1,4 @@
+
 body {
   margin: 0;
   background: black;
@@ -27,7 +28,7 @@ video {
 
 .character {
   display: inline-block;
-  margin: 20px;
+  margin: 20px 45px;
   cursor: pointer;
 }
 
