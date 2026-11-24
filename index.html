@@ -43,12 +43,32 @@
           <div id="choiceCards"></div>
         </div>
 
+        <!-- investigator note, script.js types the text into #noteText -->
+        <div id="note">
+          <div class="label">INVESTIGATOR'S NOTE</div>
+          <div id="noteText"></div>
+        </div>
+
         <button id="tapPlay" hidden>Tap to continue</button>
       </div>
 
       <!-- the picture frame goes on top of the video, the middle of the picture is see-through -->
       <img id="frame" src="assets/VideoFrame.png" alt="">
+
+      <div id="skipBar">
+        <button id="prevBtn">&#9664; Prev choice</button>
+        <button id="nextBtn">Next choice &#9654;</button>
+      </div>
     </div>
+  </div>
+
+  <!-- SCENE 7: the pin board -->
+  <div id="board" hidden>
+    <h2 id="boardTitle">CASE FILE: THE HEIST</h2>
+    <!-- the red strings are lines drawn by script.js inside this svg (https://developer.mozilla.org/en-US/docs/Web/SVG) -->
+    <svg id="strings"></svg>
+    <div id="cols"></div>
+    <button id="restartBtn" hidden>Start over</button>
   </div>
 
   <!-- black layer used to fade between the big parts -->
