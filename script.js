@@ -15,8 +15,8 @@ const ROLL_SECONDS = 9;       // how long the credits take to roll up
 // the three characters (the pictures are in the assets folder) which lets us look a person up by their key: PEOPLE["megan"].name
 // (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Property_accessors)
 const PEOPLE = {
-  megan:  { name: "Megan",     img: "assets/megan.png",  mission: "MISSION: Choose a study away location" },
-  hyein:  { name: "Hyein",     img: "assets/hyein.png",  mission: "MISSION: Graduate this semester" },
+  megan: { name: "Megan", img: "assets/megan.png", mission: "MISSION: Choose a study away location" },
+  hyein: { name: "Hyein", img: "assets/hyein.png", mission: "MISSION: Graduate this semester" },
   mariam: { name: "Mariam B.", img: "assets/mariam.png", mission: "MISSION: Submit this Comms Lab assignment" }
 };
 
@@ -43,48 +43,60 @@ const SCENES = [
     clip: "clips/scene1.mp4",
     prompt: "Choose a character",
     options: interviews(1, {
-      megan:  "Investigator note placeholder (scene 1, Megan)",
-      hyein:  "Investigator note placeholder (scene 1, Hyein)",
-      mariam: "Investigator note placeholder (scene 1, Mariam)"
+      megan: "Subject speaks of far-off places, yet cannot commit to a single one.",
+      hyein: "Subject is calm. Too calm for someone facing anything.",
+      mariam: "Subject keeps glancing at a laptop. Something needs to be done."
     })
   },
   {
     clip: "clips/scene2.mp4",
     prompt: "Choose a character",
     options: interviews(2, {
-      megan:  "Investigator note placeholder (scene 2, Megan)",
-      hyein:  "Investigator note placeholder (scene 2, Hyein)",
-      mariam: "Investigator note placeholder (scene 2, Mariam)"
+      megan: "New evidence: a list of pros and cons, no conclusion.",
+      hyein: "Subject's version of events is missing a key detail: the plan.",
+      mariam: "Subject blames 'the group.' The group was not consulted."
     })
   },
   {
     clip: "clips/scene3.mp4",
     prompt: "What does Mariam do?",
     options: [
-      { who: "mariam", label: "Break it into steps", clip: "clips/scene3_steps.mp4",
-        note: "Investigator note placeholder (scene 3, Mariam breaks it into steps)" },
-      { who: "mariam", label: "Start smoking", clip: "clips/scene3_smoking.mp4",
-        note: "Investigator note placeholder (scene 3, Mariam starts smoking)" }
+      {
+        who: "mariam", label: "Break it into steps", clip: "clips/scene3_steps.mp4",
+        note: "A checklist was found at the scene. The first box is already ticked."
+      },
+      {
+        who: "mariam", label: "Start smoking", clip: "clips/scene3_smoking.mp4",
+        note: "Subject chose a vice over a to-do list. The deadline noted the choice."
+      }
     ]
   },
   {
     clip: "clips/scene4.mp4",
     prompt: "What does Hyein do?",
     options: [
-      { who: "hyein", label: "Email the advisor", clip: "clips/scene4_email.mp4",
-        note: "Investigator note placeholder (scene 4, Hyein emails the advisor)" },
-      { who: "hyein", label: "Doomscroll", clip: "clips/scene4_doomscroll.mp4",
-        note: "Investigator note placeholder (scene 4, Hyein doomscrolls)" }
+      {
+        who: "hyein", label: "Email the advisor", clip: "clips/scene4_email.mp4",
+        note: "Email sent. Subject finally asked the question they had been avoiding."
+      },
+      {
+        who: "hyein", label: "Doomscroll", clip: "clips/scene4_doomscroll.mp4",
+        note: "Subject scrolled instead of replying. The advisor remains uncontacted."
+      }
     ]
   },
   {
     clip: "clips/scene5.mp4",
     prompt: "What does Megan do?",
     options: [
-      { who: "megan", label: "Draw from a bowl", clip: "clips/scene5_bowl.mp4",
-        note: "Investigator note placeholder (scene 5, Megan draws from a bowl)" },
-      { who: "megan", label: "Get a piercing", clip: "clips/scene5_piercing.mp4",
-        note: "Investigator note placeholder (scene 5, Megan gets a piercing)" }
+      {
+        who: "megan", label: "Draw from a bowl", clip: "clips/scene5_bowl.mp4",
+        note: "Decision outsourced to a bowl. The bowl has no opinion."
+      },
+      {
+        who: "megan", label: "Get a piercing", clip: "clips/scene5_piercing.mp4",
+        note: "Study away still undecided. The piercing is not."
+      }
     ]
   }
 ];
@@ -137,14 +149,14 @@ const creditsSound = new Audio("assets/CreditsPageAudio.mp3");
 // (https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/currentTime)
 function playSound(sound) {
   sound.currentTime = 0;
-  sound.play().catch(function () {});
+  sound.play().catch(function () { });
 }
 
 // try the jazz right away, if the browser says no we start it on the first click
 // (pointerdown: https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerdown_event)
 jazz.play().catch(function () {
   document.addEventListener("pointerdown", function startJazz() {
-    jazz.play().catch(function () {});
+    jazz.play().catch(function () { });
     document.removeEventListener("pointerdown", startJazz); // only needed once
   });
 });
@@ -193,7 +205,7 @@ intro.addEventListener("pointermove", function (e) {
 
 startBtn.addEventListener("click", function () {
   playSound(clickSound);
-  jazz.play().catch(function () {});
+  jazz.play().catch(function () { });
   titleBox.classList.add("gone"); // the css fades the writing away
   setTimeout(startFlashlight, 1100);
 });
