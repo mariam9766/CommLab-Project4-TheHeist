@@ -2,7 +2,7 @@
    THE HEIST: how this file is organised
      1. basics
      2. part 1 + 2: dim table, title, flashlight
-     3. part 3: the movie, the frame, choice screen, notes
+     3. part 3: the movie, the frame, choice screen, credits, notes
      4. scene 7: the pin board
    ============================================================ */
 
@@ -418,6 +418,53 @@ button {
   font-size: calc(var(--u) * 2);
   opacity: 1;
   transform: none;
+}
+
+/* credits */
+#credits {
+  overflow: hidden;
+}
+
+/* the credits start just below the screen (top: 100%) and the animation moves them up */
+#creditsRoll {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  color: #e8dcc4;
+  font-size: calc(var(--u) * 2.2);
+  line-height: 1.6;
+}
+
+#creditsRoll h2 {
+  margin: 0 0 calc(var(--u) * 4) 0;
+  font-size: calc(var(--u) * 6);
+  letter-spacing: 0.25em;
+}
+
+#creditsRoll p {
+  margin: 0 0 calc(var(--u) * 4) 0;
+}
+
+#creditsRoll .small {
+  margin-bottom: calc(var(--u) * 1);
+  font-size: calc(var(--u) * 1.4);
+  font-style: italic;
+  letter-spacing: 0.2em;
+  color: #a89c80;
+}
+
+/* the animation runs once and stays at the end (forwards).
+   --rollTime and --travel are set by script.js (how long and how far)
+   (https://developer.mozilla.org/en-US/docs/Web/CSS/animation)
+   (https://developer.mozilla.org/en-US/docs/Web/CSS/@keyframes) */
+#creditsRoll.rolling {
+  animation: roll var(--rollTime, 9s) linear forwards;
+}
+
+@keyframes roll {
+  from { transform: translateY(0); }
+  to { transform: translateY(calc(var(--travel, 1000px) * -1)); }
 }
 
 /* investigator note that gets written on screen. rotate() tilts it like a real paper note

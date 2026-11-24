@@ -3,13 +3,14 @@
 //   1. settings and the story (scenes, notes)
 //   2. getting the elements and loading the sounds
 //   3. parts 1 + 2: title and flashlight
-//   4. part 3: the movie, choices, notes, skip buttons
+//   4. part 3: the movie, choices, notes, credits, skip buttons
 //   5. scene 7: the pin board
 // ============================================================
 
 
 const FLASHLIGHT_SECONDS = 7; // how long you get to look around the table
 const NOTE_SECONDS = 6;       // how long an investigator note stays on screen
+const ROLL_SECONDS = 9;       // how long the credits take to roll up
 
 // the three characters (the pictures are in the assets folder) which lets us look a person up by their key: PEOPLE["megan"].name
 // (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Property_accessors)
@@ -104,6 +105,8 @@ const video = document.getElementById("film");
 const choice = document.getElementById("choice");
 const choicePrompt = document.getElementById("choicePrompt");
 const choiceCards = document.getElementById("choiceCards");
+const credits = document.getElementById("credits");
+const creditsRoll = document.getElementById("creditsRoll");
 const noteBox = document.getElementById("note");
 const noteText = document.getElementById("noteText");
 const tapPlay = document.getElementById("tapPlay");
@@ -125,6 +128,7 @@ jazz.loop = true;   // start again when it ends (https://developer.mozilla.org/e
 jazz.volume = 0.5;  // 0 is silent, 1 is full (https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/volume)
 const clickSound = new Audio("assets/ClickSound.mp3");
 const timerSound = new Audio("assets/TimerSound.mp3");
+const creditsSound = new Audio("assets/CreditsPageAudio.mp3");
 
 // plays a sound from the start.
 // browsers block sound until the visitor clicks something, so play() can fail at first.
@@ -364,13 +368,42 @@ function hideNote() {
   noteBox.classList.remove("show");
 }
 
-// scene 6: the laptop closes, then the pin board shows up
+// scene 6, then the credits
 function playFinal() {
   phase = "final";
-  playClip(FINAL_CLIP, function () {
-    fadeThrough(showBoard);
-  });
+  playClip(FINAL_CLIP, rollCredits);
   updateSkip();
+}
+
+function rollCredits() {
+  phase = "credits";
+  video.onended = null;
+  video.pause();
+  credits.classList.add("show");
+  updateSkip();
+
+  // how far the credits have to move: a bit more than the whole list, so the last line ends up on screen.
+  // offsetHeight is the height of an element in pixels (https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/offsetHeight)
+  const travel = credits.offsetHeight * 0.6 + creditsRoll.offsetHeight;
+  creditsRoll.style.setProperty("--rollTime", ROLL_SECONDS + "s");
+  creditsRoll.style.setProperty("--travel", travel + "px");
+  creditsRoll.classList.add("rolling"); // starts the css animation
+
+  let finished = false;
+  function done() {
+    if (finished) return; // make sure we only go to the board one time
+    finished = true;
+    setTimeout(function () {
+      fadeThrough(showBoard);
+    }, 1200); // a moment to read the last line
+  }
+
+  // when the roll ends we go straight to the pin board, the audio of them talking keeps playing over it
+  // (animationend: https://developer.mozilla.org/en-US/docs/Web/API/Element/animationend_event)
+  // ({ once: true } makes the listener run only one time: https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#once)
+  creditsRoll.addEventListener("animationend", done, { once: true });
+  setTimeout(done, (ROLL_SECONDS + 3) * 1000); // backup in case the animation event never comes
+  playSound(creditsSound);
 }
 
 
