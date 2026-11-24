@@ -3,18 +3,20 @@
 //   1. settings and the story (scenes, notes)
 //   2. getting the elements and loading the sounds
 //   3. parts 1 + 2: title and flashlight
-//   4. part 3: the movie and the choices
+//   4. part 3: the movie, choices, notes, skip buttons
+//   5. scene 7: the pin board
 // ============================================================
 
 
 const FLASHLIGHT_SECONDS = 7; // how long you get to look around the table
+const NOTE_SECONDS = 6;       // how long an investigator note stays on screen
 
 // the three characters (the pictures are in the assets folder) which lets us look a person up by their key: PEOPLE["megan"].name
 // (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Property_accessors)
 const PEOPLE = {
-  megan:  { name: "Megan",     img: "assets/megan.png" },
-  hyein:  { name: "Hyein",     img: "assets/hyein.png" },
-  mariam: { name: "Mariam B.", img: "assets/mariam.png" }
+  megan:  { name: "Megan",     img: "assets/megan.png",  mission: "MISSION: Choose a study away location" },
+  hyein:  { name: "Hyein",     img: "assets/hyein.png",  mission: "MISSION: Graduate this semester" },
+  mariam: { name: "Mariam B.", img: "assets/mariam.png", mission: "MISSION: Submit this Comms Lab assignment" }
 };
 
 // scenes 1 and 2 let you choose whose interview cutscene to watch.
@@ -102,8 +104,16 @@ const video = document.getElementById("film");
 const choice = document.getElementById("choice");
 const choicePrompt = document.getElementById("choicePrompt");
 const choiceCards = document.getElementById("choiceCards");
+const noteBox = document.getElementById("note");
+const noteText = document.getElementById("noteText");
 const tapPlay = document.getElementById("tapPlay");
+const prevBtn = document.getElementById("prevBtn");
+const nextBtn = document.getElementById("nextBtn");
 
+const board = document.getElementById("board");
+const cols = document.getElementById("cols");
+const strings = document.getElementById("strings");
+const restartBtn = document.getElementById("restartBtn");
 const fader = document.getElementById("fader");
 
 
@@ -215,6 +225,9 @@ function startFlashlight() {
 let sceneNumber = 0;   // which scene we are in (0 is scene 1)
 let phase = "clip";    // "clip", "choice", "cutscene", "final" or "credits"
 const picks = {};      // scene number -> the option that was picked
+const notes = {};      // scene number -> the investigator note for that pick
+let noteTimer = null;  // timers for the note, kept so we can stop them
+let typeTimer = null;
 
 function startMovie() {
   intro.hidden = true; // the hidden property hides an element (https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/hidden)
@@ -250,9 +263,11 @@ function playScene(n) {
   sceneNumber = n;
   phase = "clip";
   hideChoice();
+  hideNote();
   playClip(SCENES[n].clip, function () {
     showChoice(n);
   });
+  updateSkip();
 }
 
 // the video goes dark and the character pictures show up
@@ -261,6 +276,7 @@ function showChoice(n) {
   phase = "choice";
   video.onended = null; // so the old clip can't trigger anything anymore
   video.pause();
+  hideNote();
 
   const scene = SCENES[n];
   choicePrompt.textContent = scene.prompt;
@@ -299,34 +315,242 @@ function showChoice(n) {
   });
 
   choice.classList.add("show");
+  updateSkip();
 }
 
 function hideChoice() {
   choice.classList.remove("show");
 }
 
-// runs when a card is clicked: remember the pick, play the cutscene, then go to the next scene
+// runs when a card is clicked: remember the pick, write the note, play the cutscene, then go to the next scene
 function choose(n, option) {
   hideChoice();
   picks[n] = option;
+  notes[n] = { who: option.who, text: option.note }; // picking again in the same scene replaces the old note
   phase = "cutscene";
+  showNote(option.note);
   playClip(option.clip, function () {
+    hideNote();
     if (n + 1 < SCENES.length) {
       playScene(n + 1);
     } else {
       playFinal();
     }
   });
+  updateSkip();
 }
 
-// scene 6: the laptop closes. the credits and the pin board are not built yet,
-// so for now the page just starts over when the clip ends
-// (reload: https://developer.mozilla.org/en-US/docs/Web/API/Location/reload)
+// the investigator writes the note one letter at a time.
+// text.slice(0, i) gives the first i letters
+// (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/slice)
+function showNote(text) {
+  hideNote();
+  noteText.textContent = "";
+  noteBox.classList.add("show");
+  let i = 0;
+  typeTimer = setInterval(function () {
+    i++;
+    noteText.textContent = text.slice(0, i);
+    if (i >= text.length) {
+      clearInterval(typeTimer);
+    }
+  }, 30);
+  noteTimer = setTimeout(hideNote, NOTE_SECONDS * 1000);
+}
+
+function hideNote() {
+  clearInterval(typeTimer);
+  clearTimeout(noteTimer); // clearTimeout cancels a setTimeout that hasn't run yet
+  noteBox.classList.remove("show");
+}
+
+// scene 6: the laptop closes, then the pin board shows up
 function playFinal() {
   phase = "final";
   playClip(FINAL_CLIP, function () {
-    fadeThrough(function () {
-      location.reload();
+    fadeThrough(showBoard);
+  });
+  updateSkip();
+}
+
+
+// ---------- skip back and forth between choices ----------
+
+// where "next choice" and "previous choice" would take us (null = nowhere to go, so the button is disabled)
+function nextTarget() {
+  if (phase === "clip") return sceneNumber;                 // skip the rest of the clip
+  if (phase === "choice" || phase === "cutscene") {
+    return sceneNumber + 1 < SCENES.length ? sceneNumber + 1 : null;
+  }
+  return null;
+}
+
+function prevTarget() {
+  if (phase === "clip") return sceneNumber > 0 ? sceneNumber - 1 : null;
+  if (phase === "choice") return sceneNumber > 0 ? sceneNumber - 1 : 0; // first choice: watch scene 1 again
+  if (phase === "cutscene") return sceneNumber;             // go back and pick again
+  return null;
+}
+
+function goTo(target) {
+  if (target === null) return;
+  if (phase === "choice" && sceneNumber === 0 && target === 0) {
+    playScene(0);
+  } else {
+    showChoice(target);
+  }
+}
+
+// greys out a skip button when it has nowhere to go
+function updateSkip() {
+  nextBtn.disabled = nextTarget() === null;
+  prevBtn.disabled = prevTarget() === null;
+}
+
+nextBtn.addEventListener("click", function () {
+  playSound(clickSound);
+  goTo(nextTarget());
+});
+
+prevBtn.addEventListener("click", function () {
+  playSound(clickSound);
+  goTo(prevTarget());
+});
+
+
+// ---------- SCENE 7: the pin board ----------
+
+// waits for a number of milliseconds, used with "await" below
+// (Promise: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)
+function sleep(ms) {
+  return new Promise(function (resolve) {
+    setTimeout(resolve, ms);
+  });
+}
+
+// draws a red string between two things on the board.
+// the strings are <line> elements inside an svg. svg elements need createElementNS (not createElement)
+// (https://developer.mozilla.org/en-US/docs/Web/API/Document/createElementNS)
+// getBoundingClientRect gives the position and size of an element on screen
+// (https://developer.mozilla.org/en-US/docs/Web/API/Element/getBoundingClientRect)
+// the line "draws itself" by moving stroke-dashoffset from the full length to 0
+// (https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/stroke-dashoffset)
+function drawString(fromEl, toEl) {
+  const boardBox = board.getBoundingClientRect();
+  const a = fromEl.getBoundingClientRect();
+  const b = toEl.getBoundingClientRect();
+  // from the bottom middle of the first card to the top middle of the second one
+  const x1 = a.left + a.width / 2 - boardBox.left;
+  const y1 = a.bottom - boardBox.top;
+  const x2 = b.left + b.width / 2 - boardBox.left;
+  const y2 = b.top - boardBox.top;
+
+  const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  line.setAttribute("x1", x1);
+  line.setAttribute("y1", y1);
+  line.setAttribute("x2", x2);
+  line.setAttribute("y2", y2);
+  // Math.hypot works out the length of the line (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/hypot)
+  const length = Math.hypot(x2 - x1, y2 - y1);
+  line.style.strokeDasharray = length;
+  line.style.strokeDashoffset = length;
+  line.style.transition = "stroke-dashoffset 0.6s ease";
+  strings.appendChild(line);
+  // two frames later so the transition runs
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () {
+      line.style.strokeDashoffset = 0;
     });
   });
 }
+
+// "async" lets us use "await" inside to wait between steps without lots of nested setTimeouts
+// (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function)
+// (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/await)
+async function showBoard() {
+  movie.hidden = true;
+  board.hidden = false;
+  cols.innerHTML = "";
+  strings.innerHTML = "";
+
+  // one column per character: picture, their notes, their mission
+  const chains = [];
+  ["megan", "hyein", "mariam"].forEach(function (who) {
+    const col = document.createElement("div");
+    col.className = "col";
+
+    const photo = document.createElement("div");
+    photo.className = "pinned polaroid";
+    // innerHTML lets us write the html for the picture and name in one go
+    // (https://developer.mozilla.org/en-US/docs/Web/API/Element/innerHTML)
+    photo.innerHTML = '<img src="' + PEOPLE[who].img + '" alt=""><span>' + PEOPLE[who].name + "</span>";
+
+    const notesBox = document.createElement("div");
+    notesBox.className = "notes";
+    const noteEls = [];
+    // Object.keys gives the scene numbers we have notes for, map(Number) turns them from text into numbers,
+    // sort puts them in order so the notes show up in the order of the story
+    // (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/keys)
+    // (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort)
+    Object.keys(notes)
+      .map(Number)
+      .sort(function (x, y) { return x - y; })
+      .forEach(function (n) {
+        if (notes[n].who !== who) return; // only this character's notes go in this column
+        const el = document.createElement("div");
+        el.className = "pinned pnote";
+        el.textContent = notes[n].text;
+        notesBox.appendChild(el);
+        noteEls.push(el);
+      });
+
+    const mission = document.createElement("div");
+    mission.className = "pinned mission";
+    mission.textContent = PEOPLE[who].mission;
+
+    col.appendChild(photo);
+    col.appendChild(notesBox);
+    col.appendChild(mission);
+    cols.appendChild(col);
+    chains.push({ photo: photo, notes: noteEls, mission: mission });
+  });
+
+  // first the pictures, then the notes one by one, then the missions
+  await sleep(600);
+  chains.forEach(function (c) { c.photo.classList.add("show"); });
+  await sleep(900);
+
+  // the most notes any one character has (Math.max with apply takes a list of numbers)
+  // (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/apply)
+  const most = Math.max.apply(null, chains.map(function (c) { return c.notes.length; }));
+  for (let level = 0; level < most; level++) {
+    chains.forEach(function (c) {
+      if (level < c.notes.length) {
+        // each note is tied by string to the one before it (or to the picture for the first note)
+        const before = level === 0 ? c.photo : c.notes[level - 1];
+        c.notes[level].classList.add("show");
+        drawString(before, c.notes[level]);
+      }
+    });
+    await sleep(1100);
+  }
+
+  await sleep(500);
+  chains.forEach(function (c) {
+    // the last string goes to the mission (from the last note, or from the picture if there are no notes)
+    const last = c.notes.length ? c.notes[c.notes.length - 1] : c.photo;
+    c.mission.classList.add("show");
+    drawString(last, c.mission);
+  });
+
+  await sleep(1500);
+  restartBtn.hidden = false;
+}
+
+restartBtn.addEventListener("click", function () {
+  playSound(clickSound);
+  setTimeout(function () {
+    // reload starts the whole page again from the title (https://developer.mozilla.org/en-US/docs/Web/API/Location/reload)
+    location.reload();
+  }, 250);
+});
