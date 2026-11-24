@@ -2,7 +2,8 @@
    THE HEIST: how this file is organised
      1. basics
      2. part 1 + 2: dim table, title, flashlight
-     3. part 3: the movie, the frame, choice screen
+     3. part 3: the movie, the frame, choice screen, notes
+     4. scene 7: the pin board
    ============================================================ */
 
 
@@ -419,6 +420,42 @@ button {
   transform: none;
 }
 
+/* investigator note that gets written on screen. rotate() tilts it like a real paper note
+   (https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function/rotate) */
+#note {
+  position: absolute;
+  top: calc(var(--u) * 2);
+  right: calc(var(--u) * 2.5);
+  width: calc(var(--u) * 24);
+  padding: calc(var(--u) * 1.3);
+  box-sizing: border-box;
+  background: #f2e6c4;
+  color: #2a1f16;
+  text-align: left;
+  font-family: "Courier New", monospace;
+  font-size: calc(var(--u) * 1.15);
+  line-height: 1.4;
+  box-shadow: 0 calc(var(--u) * 0.4) calc(var(--u) * 1.5) rgba(0, 0, 0, 0.7);
+  transform: rotate(2.2deg) translateY(calc(var(--u) * -1));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s, transform 0.5s;
+  z-index: 3;
+}
+
+#note.show {
+  opacity: 1;
+  transform: rotate(2.2deg);
+}
+
+#note .label {
+  margin-bottom: calc(var(--u) * 0.6);
+  font-size: calc(var(--u) * 0.85);
+  font-weight: bold;
+  letter-spacing: 0.15em;
+  color: #8c1d18;
+}
+
 /* only shows if the browser blocks the video from starting by itself */
 #tapPlay {
   position: absolute;
@@ -431,4 +468,232 @@ button {
   background: rgba(0, 0, 0, 0.8);
   border: 2px solid #f2e6c4;
   z-index: 4;
+}
+
+/* skip buttons sit on the bottom of the frame, one on each side (justify-content: space-between) */
+#skipBar {
+  position: absolute;
+  left: 0;
+  bottom: 0.8%;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  box-sizing: border-box;
+  padding: 0 6.5%;
+  z-index: 6;
+}
+
+#skipBar button {
+  padding: calc(var(--u) * 0.3) calc(var(--u) * 1.1);
+  font-family: "Courier New", monospace;
+  font-size: calc(var(--u) * 1.05);
+  color: #f2e6c4;
+  background: rgba(30, 16, 12, 0.88);
+  border: 1px solid #f2e6c4;
+}
+
+/* :not(:disabled) so a greyed out button doesn't react to the mouse
+   (https://developer.mozilla.org/en-US/docs/Web/CSS/:not) */
+#skipBar button:hover:not(:disabled) {
+  background: #f2e6c4;
+  color: #1e100c;
+}
+
+#skipBar button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+
+/* ---------- 4. SCENE 7: the pin board ---------- */
+
+/* the cork look is made only with css: a brown color with several tiny dotted gradients on top,
+   and a dark edge (vignette) from the last gradient
+   (https://developer.mozilla.org/en-US/docs/Web/CSS/background-image#gradients) */
+#board {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #a97b4f;
+  background-image:
+    radial-gradient(rgba(60, 35, 15, 0.35) 1px, transparent 1.5px),
+    radial-gradient(rgba(255, 220, 170, 0.18) 1px, transparent 1.5px),
+    radial-gradient(ellipse at center, transparent 40%, rgba(30, 15, 5, 0.65) 100%);
+  background-size: 7px 7px, 11px 11px, 100% 100%;
+}
+
+#boardTitle {
+  position: absolute;
+  top: 2.2vh;
+  left: 50%;
+  transform: translateX(-50%) rotate(-1deg);
+  margin: 0;
+  padding: 0.6vh 2.4vh;
+  font-family: "Courier New", monospace;
+  font-size: 2.6vh;
+  letter-spacing: 0.2em;
+  color: #2a1f16;
+  background: #f2e6c4;
+  box-shadow: 0 0.4vh 1.2vh rgba(0, 0, 0, 0.5);
+  z-index: 3;
+}
+
+/* the svg with the red strings covers the whole board, behind the cards.
+   drop-shadow() gives the strings a small shadow
+   (https://developer.mozilla.org/en-US/docs/Web/CSS/filter-function/drop-shadow) */
+#strings {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+#strings line {
+  stroke: #b3151a;
+  stroke-width: 3;
+  stroke-linecap: round;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5));
+}
+
+/* the three columns, spread out evenly (justify-content: space-around) */
+#cols {
+  position: absolute;
+  top: 10vh;
+  left: 8vw;
+  width: 84vw;
+  height: 77vh;
+  display: flex;
+  justify-content: space-around;
+  z-index: 2;
+}
+
+/* space-between pushes the picture to the top and the mission to the bottom, the notes sit in the middle */
+.col {
+  width: 26vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* everything on the board starts invisible, script.js adds "show" one at a time */
+.pinned {
+  position: relative;
+  opacity: 0;
+  transition: opacity 0.6s;
+}
+
+.pinned.show {
+  opacity: 1;
+}
+
+/* red pin at the top of every card. ::before makes an extra element inside the card
+   (https://developer.mozilla.org/en-US/docs/Web/CSS/::before) */
+.pinned::before {
+  content: "";
+  position: absolute;
+  top: -0.8vh;
+  left: 50%;
+  width: 1.8vh;
+  height: 1.8vh;
+  margin-left: -0.9vh;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ff7a6e, #b3151a 60%, #5a0a0d);
+  box-shadow: 0 0.3vh 0.5vh rgba(0, 0, 0, 0.6);
+  z-index: 2;
+}
+
+.polaroid {
+  width: 15vh;
+  padding: 1vh 1vh 0.8vh 1vh;
+  background: #f4ecd8;
+  box-shadow: 0 0.5vh 1.2vh rgba(0, 0, 0, 0.55);
+  transform: rotate(-2deg);
+}
+
+.polaroid img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  object-position: top;
+}
+
+.polaroid span {
+  display: block;
+  margin-top: 0.6vh;
+  font-family: "Courier New", monospace;
+  font-size: 1.8vh;
+  font-weight: bold;
+  color: #2a1f16;
+}
+
+.notes {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.6vh;
+}
+
+.pnote {
+  width: 22vw;
+  max-width: 34vh;
+  padding: 1.4vh 1.2vh 1vh 1.2vh;
+  box-sizing: border-box;
+  background: #f2e6c4;
+  color: #2a1f16;
+  text-align: left;
+  font-family: "Courier New", monospace;
+  font-size: 1.45vh;
+  line-height: 1.35;
+  box-shadow: 0 0.4vh 1vh rgba(0, 0, 0, 0.5);
+}
+
+/* every other note is tilted the other way so they look pinned by hand
+   (:nth-child https://developer.mozilla.org/en-US/docs/Web/CSS/:nth-child) */
+.pnote:nth-child(odd) {
+  transform: rotate(1.6deg);
+}
+
+.pnote:nth-child(even) {
+  transform: rotate(-1.4deg);
+}
+
+.mission {
+  padding: 1.2vh 1.6vh;
+  max-width: 24vw;
+  background: #8c1d18;
+  color: #f6e9d0;
+  font-family: "Courier New", monospace;
+  font-size: 1.8vh;
+  font-weight: bold;
+  letter-spacing: 0.06em;
+  box-shadow: 0 0.5vh 1.2vh rgba(0, 0, 0, 0.55);
+  border: 0.3vh dashed rgba(246, 233, 208, 0.7);
+}
+
+#restartBtn {
+  position: absolute;
+  bottom: 1.8vh;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.8vh 4vh;
+  font-size: 2.2vh;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: #f2e6c4;
+  background: rgba(30, 16, 12, 0.9);
+  border: 2px solid #f2e6c4;
+  z-index: 4;
+}
+
+#restartBtn:hover {
+  background: #f2e6c4;
+  color: #1e100c;
 }
