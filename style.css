@@ -1,3 +1,12 @@
+/* ============================================================
+   THE HEIST: how this file is organised
+     1. basics
+     2. part 1 + 2: dim table, title, flashlight
+     3. part 3: the movie, the frame, choice screen
+   ============================================================ */
+
+
+/* ---------- 1. basics ---------- */
 
 body {
   margin: 0;
@@ -5,38 +14,421 @@ body {
   color: white;
   font-family: Georgia, serif;
   text-align: center;
+  overflow: hidden; /* no scrollbars, every page fits the window */
 }
 
-video {
-  width: 100%;
+/* the hidden attribute has to win over the display rules below
+   (https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/hidden) */
+[hidden] {
+  display: none !important;
 }
 
-/* dark screen on top of the video */
-#menu {
-  display: none;
+button {
+  font-family: inherit; /* buttons don't use the page font by default */
+  cursor: pointer;
+}
+
+/* black screen that fades in and out between the big parts.
+   pointer-events: none lets clicks go through it
+   (https://developer.mozilla.org/en-US/docs/Web/CSS/pointer-events) */
+#fader {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.6);
+  background: black;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.8s; /* smooth change (https://developer.mozilla.org/en-US/docs/Web/CSS/transition) */
+  z-index: 100; /* on top of everything (https://developer.mozilla.org/en-US/docs/Web/CSS/z-index) */
 }
 
-#menu h2 {
-  margin-top: 35vh;
+#fader.on {
+  opacity: 1;
 }
 
-.character {
-  display: inline-block;
-  margin: 20px 45px;
-  cursor: pointer;
+
+/* ---------- 2. PART 1 + 2: dim table, title, flashlight ---------- */
+
+/* --x and --y follow the mouse (script.js sets them), they are css variables
+   (https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties) */
+#intro {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: black;
+  --x: 50%;
+  --y: 50%;
 }
 
-/* just circles as placeholders */
-.circle {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: white;
-  margin: auto;
+/* both table layers use the same picture.
+   "center / cover" fills the whole screen without stretching it
+   (https://developer.mozilla.org/en-US/docs/Web/CSS/background-size#cover) */
+.bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: url("assets/opening_page_bg.png") center / cover no-repeat;
+}
+
+/* the dim table. brightness() makes it darker, 1 is normal
+   (https://developer.mozilla.org/en-US/docs/Web/CSS/filter)
+   (https://developer.mozilla.org/en-US/docs/Web/CSS/filter-function/brightness) */
+#bgDim {
+  filter: brightness(0.28) saturate(0.8);
+  transition: filter 1.4s;
+}
+
+/* once the flashlight is on, everything outside the beam gets even darker */
+#intro.dark #bgDim {
+  filter: brightness(0.1) saturate(0.8);
+}
+
+/* a bright copy of the table that you only see inside the flashlight circle.
+   mask-image hides everything that is transparent in the mask, a radial-gradient circle
+   that follows the mouse (the -webkit- version is for Safari)
+   (https://developer.mozilla.org/en-US/docs/Web/CSS/mask-image)
+   (https://developer.mozilla.org/en-US/docs/Web/CSS/gradient/radial-gradient)
+   vmax = 1% of the longer side of the window (https://developer.mozilla.org/en-US/docs/Web/CSS/length#vmax) */
+#bgLit {
+  opacity: 0;
+  transition: opacity 1.4s;
+  -webkit-mask-image: radial-gradient(circle 15vmax at var(--x) var(--y), black 0%, rgba(0, 0, 0, 0.8) 40%, transparent 100%);
+  mask-image: radial-gradient(circle 15vmax at var(--x) var(--y), black 0%, rgba(0, 0, 0, 0.8) 40%, transparent 100%);
+}
+
+#intro.dark {
+  cursor: crosshair; /* https://developer.mozilla.org/en-US/docs/Web/CSS/cursor */
+}
+
+#intro.dark #bgLit {
+  opacity: 1;
+}
+
+/* the title, names and start button, centered with flexbox
+   (https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_flexible_box_layout/Basic_concepts_of_flexbox) */
+#titleBox {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 1s;
+}
+
+/* script.js adds "gone" when Start is clicked, so the writing fades away */
+#titleBox.gone {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* vmin = 1% of the shorter side of the window, so the text scales with the screen
+   (https://developer.mozilla.org/en-US/docs/Web/CSS/length#vmin)
+   letter-spacing (https://developer.mozilla.org/en-US/docs/Web/CSS/letter-spacing)
+   text-shadow (https://developer.mozilla.org/en-US/docs/Web/CSS/text-shadow) */
+#titleBox h1 {
+  margin: 0;
+  font-size: 11vmin;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #efe5c9;
+  text-shadow: 0 0 2vmin black, 0 0 6vmin black;
+}
+
+#names {
+  margin: 2vmin 0 6vmin 0;
+  font-size: 2.4vmin;
+  font-style: italic;
+  letter-spacing: 0.1em;
+  color: #d8cba8;
+  text-shadow: 0 0 1.5vmin black;
+}
+
+#startBtn {
+  padding: 1.4vmin 5vmin;
+  font-size: 2.6vmin;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #efe5c9;
+  background: rgba(0, 0, 0, 0.35);
+  border: 2px solid #efe5c9;
+  transition: background 0.3s, color 0.3s;
+}
+
+#startBtn:hover {
+  background: #efe5c9;
+  color: #1a120e;
+}
+
+/* the small text at the bottom, it fades in when the flashlight turns on */
+#hint {
+  position: absolute;
+  bottom: 4vh;
+  left: 0;
+  width: 100%;
+  margin: 0;
+  font-size: 2vmin;
+  font-style: italic;
+  color: #d8cba8;
+  text-shadow: 0 0 1vmin black;
+  opacity: 0;
+  transition: opacity 1.4s;
+  pointer-events: none;
+}
+
+#intro.dark #hint {
+  opacity: 0.9;
+}
+
+/* the countdown gets redder as time passes.
+   the 7s comes from --secs, set by script.js, and var(--secs, 7s) means "use 7s if it isn't set"
+   linear = same speed the whole time (https://developer.mozilla.org/en-US/docs/Web/CSS/easing-function) */
+#timerBox {
+  position: absolute;
+  top: 4vh;
+  left: 0;
+  width: 100%;
+  opacity: 0;
+  transition: opacity 1s;
+  pointer-events: none;
+}
+
+#intro.dark #timerBox {
+  opacity: 1;
+}
+
+#timerNum {
+  font-family: "Courier New", monospace;
+  font-size: 6vmin;
+  color: #efe5c9;
+  text-shadow: 0 0 1vmin black;
+  transition: color var(--secs, 7s) linear;
+}
+
+#timerBar {
+  width: 26vmin;
+  height: 0.7vmin;
+  margin: 1vmin auto 0 auto;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* the bar shrinks from full to empty while it turns red */
+#timerFill {
+  width: 100%;
+  height: 100%;
+  background: #efe5c9;
+  transition: width var(--secs, 7s) linear, background var(--secs, 7s) linear;
+}
+
+#timerBox.running #timerNum {
+  color: #ff2a1a;
+}
+
+#timerBox.running #timerFill {
+  width: 0;
+  background: #ff2a1a;
+}
+
+
+/* ---------- 3. PART 3: the mini movie ---------- */
+
+#movie {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #0b0807;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* the stage is as big as it can be while keeping the shape of the frame picture (1671 x 941).
+   --u is 1% of the stage width, so everything inside is sized with calc(var(--u) * something)
+   and scales together with the frame.
+   min() picks the smaller of two values (https://developer.mozilla.org/en-US/docs/Web/CSS/min)
+   calc() does math with units (https://developer.mozilla.org/en-US/docs/Web/CSS/calc) */
+#stage {
+  position: relative;
+  --u: calc(min(100vw, 100vh * 1.7758) / 100);
+  width: calc(var(--u) * 100);
+  height: calc(var(--u) * 56.31);
+}
+
+/* the see-through hole in VideoFrame.png. the video and everything on screen goes here.
+   it is placed with percentages so it lines up with the frame at any size.
+   overflow: hidden cuts off anything that sticks out (like the credits before they roll in) */
+#screen {
+  position: absolute;
+  left: 4.67%;
+  top: 5.95%;
+  width: 90.6%;
+  height: 86.3%;
+  background: black;
+  overflow: hidden;
+  z-index: 1;
+}
+
+/* the frame picture goes on top of the screen, clicks go through it */
+#frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* object-fit: contain shows the whole video without cutting or stretching it
+   (https://developer.mozilla.org/en-US/docs/Web/CSS/object-fit) */
+#film {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: black;
+}
+
+/* a black layer on top of the video (used for the choice screen and the credits).
+   .show makes it appear, the fade comes from the transition */
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: black;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.7s;
+}
+
+.overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* choice screen */
+#choice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#choicePrompt {
+  margin: 0 0 calc(var(--u) * 1.6) 0;
+  font-size: calc(var(--u) * 1.7);
+  font-style: italic;
+  letter-spacing: 0.08em;
+  color: #e8dcc4;
+}
+
+/* gap puts space between the cards (https://developer.mozilla.org/en-US/docs/Web/CSS/gap) */
+#choiceCards {
+  display: flex;
+  justify-content: center;
+  gap: calc(var(--u) * 3);
+}
+
+/* every character card. filter: brightness() is what darkens or brightens the whole card */
+.card {
+  width: calc(var(--u) * 15);
+  padding: 0;
+  background: none;
+  border: none;
+  color: #f2e6c4;
+  filter: brightness(0.85);
+  transition: filter 0.45s, transform 0.45s;
+}
+
+/* aspect-ratio keeps the picture 4 wide : 5 tall (https://developer.mozilla.org/en-US/docs/Web/CSS/aspect-ratio)
+   object-fit: cover fills that shape and crops the extra, object-position: top keeps the faces
+   (https://developer.mozilla.org/en-US/docs/Web/CSS/object-position)
+   box-shadow (https://developer.mozilla.org/en-US/docs/Web/CSS/box-shadow) */
+.card .photo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  object-position: top;
+  border: calc(var(--u) * 0.5) solid #efe3c8;
+  box-sizing: border-box;
+  box-shadow: 0 0 calc(var(--u) * 1.5) rgba(0, 0, 0, 0.8);
+}
+
+/* the name is hidden until you hover, then slides up smoothly.
+   translateY moves it up or down (https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function/translateY) */
+.card .name {
+  display: block;
+  margin-top: calc(var(--u) * 0.9);
+  font-size: calc(var(--u) * 1.6);
+  letter-spacing: 0.12em;
+  opacity: 0;
+  transform: translateY(calc(var(--u) * -0.8));
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+/* hovering the row darkens every card, then the hovered card goes bright again.
+   (:hover https://developer.mozilla.org/en-US/docs/Web/CSS/:hover)
+   (:focus-visible is the same thing for keyboard users https://developer.mozilla.org/en-US/docs/Web/CSS/:focus-visible) */
+#choiceCards:hover .card {
+  filter: brightness(0.22);
+}
+
+#choiceCards .card:hover,
+#choiceCards .card:focus-visible {
+  filter: brightness(1.15);
+  transform: scale(1.04);
+  outline: none;
+}
+
+.card:hover .name,
+.card:focus-visible .name {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* two-option scenes: no pictures, just two text buttons that are always readable */
+#choiceCards.options {
+  gap: calc(var(--u) * 5);
+}
+
+#choiceCards.options .card {
+  width: auto;
+  padding: calc(var(--u) * 1.4) calc(var(--u) * 3.5);
+  border: 2px solid #efe3c8;
+  background: rgba(239, 227, 200, 0.06);
+}
+
+#choiceCards.options .name {
+  margin-top: 0;
+  font-size: calc(var(--u) * 2);
+  opacity: 1;
+  transform: none;
+}
+
+/* only shows if the browser blocks the video from starting by itself */
+#tapPlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%); /* centers it (https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function/translate) */
+  padding: calc(var(--u) * 1) calc(var(--u) * 3);
+  font-size: calc(var(--u) * 1.8);
+  color: #f2e6c4;
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid #f2e6c4;
+  z-index: 4;
 }

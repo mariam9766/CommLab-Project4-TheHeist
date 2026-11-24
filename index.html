@@ -2,30 +2,57 @@
 <html>
 <head>
   <title>The Heist</title>
+  <meta charset="utf-8">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <video id="film" src="video.mp4" controls></video>
+  <!-- PART 1 + 2: the dim table, the title, then the flashlight -->
+  <div id="intro">
+    <!-- two copies of the table picture: a dark one, and a bright one that only shows inside the flashlight -->
+    <div id="bgDim" class="bg"></div>
+    <div id="bgLit" class="bg"></div>
 
-  <div id="menu">
-    <h2>Choose your character</h2>
-
-    <div class="character" onclick="keepPlaying()">
-      <div class="circle"></div>
-      <p>Mariam B</p>
+    <div id="titleBox">
+      <h1>The Heist</h1>
+      <p id="names">Mariam A. &nbsp;·&nbsp; Mariam B. &nbsp;·&nbsp; Megan &nbsp;·&nbsp; Hyein</p>
+      <button id="startBtn">Start</button>
     </div>
 
-    <div class="character" onclick="keepPlaying()">
-      <div class="circle"></div>
-      <p>Hyein</p>
+    <!-- 7 second countdown that turns red -->
+    <div id="timerBox">
+      <div id="timerNum">0:07</div>
+      <div id="timerBar"><div id="timerFill"></div></div>
     </div>
 
-    <div class="character" onclick="keepPlaying()">
-      <div class="circle"></div>
-      <p>Megan</p>
+    <!-- small text at the bottom during the flashlight part -->
+    <p id="hint">Look around while you still have the chance...</p>
+  </div>
+
+  <!-- PART 3: the mini movie with the frame around it -->
+  <!-- the hidden attribute keeps a part invisible until script.js shows it (https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/hidden) -->
+  <div id="movie" hidden>
+    <div id="stage">
+      <div id="screen">
+        <!-- playsinline stops iPhones from forcing the video fullscreen (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video#playsinline) -->
+        <video id="film" playsinline></video>
+
+        <!-- the screen goes dark and the characters appear -->
+        <div id="choice" class="overlay">
+          <p id="choicePrompt"></p>
+          <div id="choiceCards"></div>
+        </div>
+
+        <button id="tapPlay" hidden>Tap to continue</button>
+      </div>
+
+      <!-- the picture frame goes on top of the video, the middle of the picture is see-through -->
+      <img id="frame" src="assets/VideoFrame.png" alt="">
     </div>
   </div>
+
+  <!-- black layer used to fade between the big parts -->
+  <div id="fader"></div>
 
   <script src="script.js"></script>
 </body>
