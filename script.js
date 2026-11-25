@@ -114,6 +114,42 @@ const SCENES = [
 
 const FINAL_CLIP = "clips/scene6.mp4"; // laptop closes, then the credits roll
 
+// ---------- preloading ----------
+// the clips are small, so while the viewer watches one clip we download the ones that could come next.
+// fetch() downloads a file and .blob() keeps it in memory. URL.createObjectURL gives that file an address the video can play
+// (https://developer.mozilla.org/en-US/docs/Web/API/Window/fetch)
+// (https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL_static)
+const preloaded = {}; // clip path -> "loading" or the in-memory address once it is downloaded
+
+function preload(src) {
+  if (preloaded[src]) return; // already downloading or already done
+  preloaded[src] = "loading";
+  fetch(src)
+    .then(function (response) {
+      return response.blob();
+    })
+    .then(function (blob) {
+      preloaded[src] = URL.createObjectURL(blob);
+    })
+    .catch(function () {
+      delete preloaded[src]; // if it failed, the video just loads normally from the folder later
+    });
+}
+
+// downloads everything that can play after the clip of scene n: its cutscenes and the next scene (or the final clip)
+function preloadAfter(n) {
+  SCENES[n].options.forEach(function (option) {
+    preload(option.clip);
+  });
+  if (n + 1 < SCENES.length) {
+    preload(SCENES[n + 1].clip);
+  } else {
+    preload(FINAL_CLIP);
+  }
+}
+
+// the opening page lasts a few seconds, so scene 1 can download while the viewer looks around the table
+preload(SCENES[0].clip);
 
 // ---------- elements ----------
 // grabbing everything once at the top so we can use the names below
@@ -271,7 +307,8 @@ function playClip(src, whenDone) {
   video.onerror = function () {
     setTimeout(whenDone, 1000);
   };
-  video.src = src; // changing src loads the new clip
+  // changing src loads the new clip. if we already downloaded it in the background, we play that copy so it starts right away
+  video.src = preloaded[src] && preloaded[src] !== "loading" ? preloaded[src] : src;
   tapPlay.hidden = true;
   // play() gives back a promise that fails if the browser blocks playing,
   // then we show a "Tap to continue" button
@@ -294,6 +331,11 @@ function playScene(n) {
   playClip(SCENES[n].clip, function () {
     showChoice(n);
   });
+  // "canplaythrough" means the browser has enough of this clip to play it all the way, so now we can start downloading the next ones
+  // (https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canplaythrough_event)
+  video.addEventListener("canplaythrough", function () {
+    preloadAfter(n);
+  }, { once: true });
   updateSkip();
 }
 
