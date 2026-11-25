@@ -119,10 +119,25 @@ const FINAL_CLIP = "clips/scene6.mp4"; // laptop closes, then the credits roll
 // fetch() downloads a file and .blob() keeps it in memory. URL.createObjectURL gives that file an address the video can play
 // (https://developer.mozilla.org/en-US/docs/Web/API/Window/fetch)
 // (https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL_static)
-const preloaded = {}; // clip path -> "loading" or the in-memory address once it is downloaded
+const preloaded = {}; // clip path -> "waiting", "loading", "skip" or the in-memory address once it is downloaded
+const waitingList = []; // clips that still have to be downloaded, in order
+let downloading = false; // we only download one clip at a time so they don't slow each other down
 
 function preload(src) {
-  if (preloaded[src]) return; // already downloading or already done
+  if (preloaded[src]) return; // already waiting, downloading or done
+  preloaded[src] = "waiting";
+  waitingList.push(src);
+  downloadNext();
+}
+
+function downloadNext() {
+  if (downloading || waitingList.length === 0) return;
+  const src = waitingList.shift(); // shift() takes the first item out of the list
+  if (preloaded[src] === "skip") { // the viewer already started this one, no need to download it twice
+    downloadNext();
+    return;
+  }
+  downloading = true;
   preloaded[src] = "loading";
   fetch(src)
     .then(function (response) {
@@ -133,6 +148,10 @@ function preload(src) {
     })
     .catch(function () {
       delete preloaded[src]; // if it failed, the video just loads normally from the folder later
+    })
+    .finally(function () {
+      downloading = false;
+      downloadNext(); // then the next clip in the list
     });
 }
 
@@ -308,7 +327,8 @@ function playClip(src, whenDone) {
     setTimeout(whenDone, 1000);
   };
   // changing src loads the new clip. if we already downloaded it in the background, we play that copy so it starts right away
-  video.src = preloaded[src] && preloaded[src] !== "loading" ? preloaded[src] : src;
+  if (preloaded[src] === "waiting") preloaded[src] = "skip"; // not downloaded yet, so the video loads it itself
+  video.src = preloaded[src] && preloaded[src].startsWith("blob:") ? preloaded[src] : src;
   tapPlay.hidden = true;
   // play() gives back a promise that fails if the browser blocks playing,
   // then we show a "Tap to continue" button
