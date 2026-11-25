@@ -36,7 +36,7 @@ function interviews(n, notes) {
 }
 
 // every scene = a clip, then a choice screen, then the cutscene you picked.
-// the clips in the clips folder are placeholders currently.
+// the clips in the clips folder are the final footage for every scene.
 // "note" is the investigator note that gets written while that cutscene plays.
 const SCENES = [
   {
