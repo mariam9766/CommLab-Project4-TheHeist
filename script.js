@@ -58,6 +58,17 @@ const SCENES = [
     })
   },
   {
+    // scene 2b: Megan gets Hyein back by pulling her chair, then you pick whose interview to watch again.
+    // it is called "2b" so none of the other clip names had to change (the clips are clips/scene2b.mp4, clips/scene2b_megan.mp4 ...)
+    clip: "clips/scene2b.mp4",
+    prompt: "Choose a character",
+    options: interviews("2b", {
+      megan: "Subject got revenge with a chair. Motive: one paper ball.",
+      hyein: "Subject blames the chair. The chair has not commented.",
+      mariam: "Subject watched it all happen and did nothing. A bystander, or an accomplice?"
+    })
+  },
+  {
     clip: "clips/scene3.mp4",
     prompt: "What does Mariam do?",
     options: [
